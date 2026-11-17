@@ -57,6 +57,10 @@ services=(
     "MG_ATOM_TOKEN_POSTGRES_READER:postgres-reader"
     "MG_ATOM_TOKEN_BOOTSTRAP:bootstrap"
     "MG_ATOM_TOKEN_EJAD_STORE:ejad-store"
+    # The Ejad UI (Next.js, run outside compose) reads this value as
+    # EJAD_ATOM_SERVICE_TOKEN in ui/.env. It only uses it server-side, after
+    # its own workspace role check, to connect devices to channels.
+    "MG_ATOM_TOKEN_EJAD_UI:ejad-ui"
 )
 
 force=0
