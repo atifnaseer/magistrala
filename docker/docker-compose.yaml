@@ -330,6 +330,7 @@ services:
       - ./fluxmq/secrets/postgres-writer-current:/etc/fluxmq/secrets/postgres-writer-current:ro
       - ./fluxmq/secrets/fluxmq-auth-current:/etc/fluxmq/secrets/fluxmq-auth-current:ro
       - ./fluxmq/secrets/alarms-current:/etc/fluxmq/secrets/alarms-current:ro
+      - ./fluxmq/secrets/ejad-store-current:/etc/fluxmq/secrets/ejad-store-current:ro
       - magistrala-fluxmq-node1-volume:/tmp/fluxmq
 
   fluxmq-node2:
@@ -360,6 +361,7 @@ services:
       - ./fluxmq/secrets/postgres-writer-current:/etc/fluxmq/secrets/postgres-writer-current:ro
       - ./fluxmq/secrets/fluxmq-auth-current:/etc/fluxmq/secrets/fluxmq-auth-current:ro
       - ./fluxmq/secrets/alarms-current:/etc/fluxmq/secrets/alarms-current:ro
+      - ./fluxmq/secrets/ejad-store-current:/etc/fluxmq/secrets/ejad-store-current:ro
       - magistrala-fluxmq-node2-volume:/tmp/fluxmq
 
   fluxmq-node3:
@@ -390,6 +392,7 @@ services:
       - ./fluxmq/secrets/postgres-writer-current:/etc/fluxmq/secrets/postgres-writer-current:ro
       - ./fluxmq/secrets/fluxmq-auth-current:/etc/fluxmq/secrets/fluxmq-auth-current:ro
       - ./fluxmq/secrets/alarms-current:/etc/fluxmq/secrets/alarms-current:ro
+      - ./fluxmq/secrets/ejad-store-current:/etc/fluxmq/secrets/ejad-store-current:ro
       - magistrala-fluxmq-node3-volume:/tmp/fluxmq
 
   fluxmq-auth:
@@ -1038,6 +1041,52 @@ services:
       - ./ssl/certs/alarms-fluxmq-client.crt:${MG_ALARMS_BROKER_CLIENT_CERT}:ro
       - ./ssl/certs/alarms-fluxmq-client.key:${MG_ALARMS_BROKER_CLIENT_KEY}:ro
       - ./ssl/certs/ca.crt:${MG_ALARMS_BROKER_CA_CERTS}:ro
+
+  # Ejad store forwarder: copies the messages of channels flagged with
+  # attributes.store_messages from the message stream to the writers stream.
+  # Built from this repository (cmd/ejad-store); `up` builds it when the image
+  # is missing, `up --build` rebuilds it.
+  ejad-store:
+    image: ejad/ejad-store:dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        SVC: ejad-store
+    container_name: magistrala-ejad-store
+    depends_on:
+      atom:
+        condition: service_started
+      re:
+        condition: service_started
+      fluxmq-node1:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      MG_EJAD_STORE_LOG_LEVEL: ${MG_EJAD_STORE_LOG_LEVEL}
+      MG_EJAD_STORE_HTTP_HOST: ${MG_EJAD_STORE_HTTP_HOST}
+      MG_EJAD_STORE_HTTP_PORT: ${MG_EJAD_STORE_HTTP_PORT}
+      MG_EJAD_STORE_INSTANCE_ID: ${MG_EJAD_STORE_INSTANCE_ID}
+      MG_EJAD_STORE_RE_URL: ${MG_EJAD_STORE_RE_URL}
+      MG_EJAD_STORE_REFRESH_INTERVAL: ${MG_EJAD_STORE_REFRESH_INTERVAL}
+      MG_EJAD_STORE_BROKER_URL: ${MG_EJAD_STORE_BROKER_URL}
+      MG_EJAD_STORE_BROKER_CLIENT_CERT: ${MG_EJAD_STORE_BROKER_CLIENT_CERT}
+      MG_EJAD_STORE_BROKER_CLIENT_KEY: ${MG_EJAD_STORE_BROKER_CLIENT_KEY}
+      MG_EJAD_STORE_BROKER_CA_CERTS: ${MG_EJAD_STORE_BROKER_CA_CERTS}
+      ATOM_URL: ${ATOM_URL}
+      ATOM_SERVICE_TOKEN: ${MG_ATOM_TOKEN_EJAD_STORE}
+      ATOM_TIMEOUT: ${ATOM_TIMEOUT}
+    ports:
+      - ${MG_EJAD_STORE_HTTP_PORT}:${MG_EJAD_STORE_HTTP_PORT}
+    networks:
+      - magistrala-base-net
+    volumes:
+      # The URI SAN in this client certificate identifies the forwarder to the
+      # FluxMQ local listener; the broker ACL permits consuming `m` and
+      # publishing to the writers stream only.
+      - ./ssl/certs/ejad-store-fluxmq-client.crt:${MG_EJAD_STORE_BROKER_CLIENT_CERT}:ro
+      - ./ssl/certs/ejad-store-fluxmq-client.key:${MG_EJAD_STORE_BROKER_CLIENT_KEY}:ro
+      - ./ssl/certs/ca.crt:${MG_EJAD_STORE_BROKER_CA_CERTS}:ro
 
   reports-db:
     image: docker.io/postgres:18.4-alpine3.24

@@ -56,6 +56,7 @@ services=(
     "MG_ATOM_TOKEN_TIMESCALE_READER:timescale-reader"
     "MG_ATOM_TOKEN_POSTGRES_READER:postgres-reader"
     "MG_ATOM_TOKEN_BOOTSTRAP:bootstrap"
+    "MG_ATOM_TOKEN_EJAD_STORE:ejad-store"
 )
 
 force=0

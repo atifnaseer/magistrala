@@ -342,6 +342,9 @@ endif
 ifeq ("$(wildcard docker/ssl/certs/alarms-fluxmq-client.crt)","")
 	$(MAKE) -C docker/ssl alarms_fluxmq_client_cert
 endif
+ifeq ("$(wildcard docker/ssl/certs/ejad-store-fluxmq-client.crt)","")
+	$(MAKE) -C docker/ssl ejad_store_fluxmq_client_cert
+endif
 ifeq ("$(wildcard docker/fluxmq/secrets/re-current)","")
 	$(MAKE) -C docker/ssl fluxmq_service_secret
 endif
@@ -356,6 +359,9 @@ ifeq ("$(wildcard docker/fluxmq/secrets/fluxmq-auth-current)","")
 endif
 ifeq ("$(wildcard docker/fluxmq/secrets/alarms-current)","")
 	$(MAKE) -C docker/ssl alarms_fluxmq_service_secret
+endif
+ifeq ("$(wildcard docker/fluxmq/secrets/ejad-store-current)","")
+	$(MAKE) -C docker/ssl ejad_store_fluxmq_service_secret
 endif
 
 check_re_trace_key:

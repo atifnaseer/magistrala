@@ -207,6 +207,22 @@ auth:
         # Rules Engine writes its alarm outputs to.
         subscribe:
           - "alarms"
+    - name: "ejad-store"
+      certificate_uri_san: "spiffe://absmach/magistrala/ejad-store"
+      # The Ejad store forwarder copies the messages of channels flagged with
+      # attributes.store_messages from the message stream to the writers
+      # stream. The role lets it state the device's protocol and identity, as
+      # the Rules Engine does for its save_senml output; otherwise every saved
+      # message would read as published over AMQP by the forwarder.
+      role: "service"
+      current_secret_file: "/etc/fluxmq/secrets/ejad-store-current"
+      permissions:
+        # Same prefix reasoning as the Rules Engine's writers grant.
+        publish:
+          - routing_key_prefix: "$queue/writers/"
+        # The message stream it forwards from.
+        subscribe:
+          - "m"
     - name: "fluxmq-auth"
       certificate_uri_san: "spiffe://absmach/magistrala/fluxmq-auth"
       # The publish proxy relays messages a user published over HTTP. Stating
